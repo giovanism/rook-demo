@@ -118,6 +118,15 @@ kubectl create -f filesystem.yaml
 
 > TODO: set as default storageclass
 
+Kita dapat menambahkan 2 baris kode sumber berikut:
+
+```
+annotations:
+    storageclass.kubernetes.io/is-default-class: true
+```
+
+pada berkas `csi-storageclass.yaml` pada bagian `metadata`.
+
 ## Dynamic Provisioning
 
 > TODO
