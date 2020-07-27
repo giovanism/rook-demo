@@ -28,7 +28,7 @@ spec:
       containers:
         - name: sleep
           image: busybox
-          command: ["/bin/sh", "-ec", "sleep 1000"]
+          command: ["sleep", "60000"]
           volumeMounts:
             - name: mnt-vol
               mountPath: /data

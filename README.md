@@ -153,7 +153,99 @@ pada berkas `csi-storageclass.yaml` pada bagian `metadata`.
 
 ## _Dynamic Provisioning in Action_
 
-> TODO
+Sekarang untuk menggunakan _storage_ yang sudah diatur menggunakan _dynamic
+provisioning_, terapkan _manifest_ `test-daemonset.yaml` untuk membuat satu PVC
+dan DaemonSet yang akan memakai volume dari PVC tersebut.
+
+```bash
+kubectl create -f test-daemonset.yaml
+```
+
+Sementara menunggu PV diikat ke PVC dan DaemonSet kita berjalan, mari kunjungi
+kembali _resource_ PVC yang dibuat.
+
+```yaml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: test-pvc-daemonset
+spec:
+  accessModes:
+    - ReadWriteMany
+  volumeMode: Filesystem
+  resources:
+    requests:
+      storage: 1Gi
+```
+
+PVC yang digunakan memiliki mode akses RWX (ReadWriteMany) sehingga bisa
+dipasang sebagai _read-write_ oleh banyak node. Sekali lagi banyak __node__,
+bukan Pod. Mode RWX mengeksploitasi fitur akses konkuren yang menjadi salah
+satu keuntungan kebanyakan solusi _storage_ berbasis _filesystem_ seperti NFS,
+Azure Files, dan Amazon EFS.
+
+Lalu, ketika Pod DaemonSet sudah berjalan kita bisa cek bahwa mereka dijadwalkan
+dan berjalan di node yang berbeda-beda.
+
+```bash
+$ kubectl get pod -l app=busybox -o wide
+NAME                      READY   STATUS    RESTARTS   AGE   IP              NODE    NOMINATED NODE   READINESS GATES
+busybox-daemonset-hccnw   1/1     Running   0          29m   10.233.66.168   k8s-3   <none>           <none>
+busybox-daemonset-hshpm   1/1     Running   0          29m   10.233.64.113   k8s-1   <none>           <none>
+busybox-daemonset-nnscb   1/1     Running   0          29m   10.233.65.149   k8s-2   <none>           <none>
+```
+
+Kemudian, untuk mensimulasikan akses konkuren ke filesystem bisa memakai
+perintah sederhana berikut di beberapa terminal secara bersamaan menggunakan
+aplikasi kesayangan Anda masing-masing (tmux, screen, Tilix, dkk.).
+
+```bash
+$ kubectl exec -it busybox-daemonset-hshpm -- sh -c 'time head -c 256m /dev/urandom > /data/penting0'
+real    2m 16.00s
+user    0m 1.48s
+sys     0m 12.76s
+```
+
+```bash
+$ kubectl exec -it busybox-daemonset-hccnw -- sh -c 'time head -c 256m /dev/urandom > /data/penting1'
+real    1m 38.65s
+user    0m 1.31s
+sys     0m 10.32s
+```
+
+```bash
+$ kubectl exec -it busybox-daemonset-nnscb -- ls -lha /data
+total 357M
+drwxrwxrwx    1 root     root           2 Jul 26 17:53 .
+drwxr-xr-x    1 root     root        4.0K Jul 26 17:40 ..
+-rw-r--r--    1 root     root      162.1M Jul 26 17:53 penting0
+-rw-r--r--    1 root     root      194.8M Jul 26 17:54 penting1
+```
+
+Untuk menghentikan DaemonSet busybox dan juga menghapus PVC yang digunakan cukup
+jalankan perintah di bawah. Jangan lupa bahwa StorageClass yang kita pakai
+memiliki nilai `reclaimPolicy: Delete`, sehingga begitu PVC dihapus maka
+resource _storage_ yang digunakan oleh PV akan diklaim kembali dengan cara
+menghapus PV dan data di dalamnya seperti contoh output di bawah perintah.
+
+```bash
+kubectl delete -f test-daemonset.yaml
+```
+
+```
+$ kubectl get pv
+NAME                                       CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS     CLAIM                        STORAGECLASS   REASON   AGE
+pvc-36550fd2-e309-4cce-bef0-a4cf9db67c37   1Gi        RWX            Delete           Released   default/test-pvc-daemonset   rook-cephfs             35m
+$ kubectl get pv
+NAME                                       CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS        CLAIM                        STORAGECLASS   REASON   AGE
+pvc-36550fd2-e309-4cce-bef0-a4cf9db67c37   1Gi        RWX            Delete           Terminating   default/test-pvc-daemonset   rook-cephfs             37m
+$ kubectl get pv
+No resources found in default namespace.
+```
+
+Meskipun contoh yang diberikan masih belum praktis, namun cukup menunjukkan
+kapabilitas solusi _storage_ yang dibangun menggunakan _resource_ Kubernetes
+seperti PVC, StorageClass dan CSI Plugin.
 
 [rook-io]: https://rook.io
 [quickstart-ceph]: https://rook.io/docs/rook/v1.3/ceph-quickstart.html
