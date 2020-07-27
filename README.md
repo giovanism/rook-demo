@@ -27,8 +27,8 @@ Untuk konfigurasi yang lebih lanjut lagi, bisa merujuk ke
 ### Deploy Operator Rook dan Buat Klaster Ceph
 
 Contoh ini hanya akan mendemonstrasikan `volumeMode: Filesystem`, sehingga kita
-hanya membutuhkan CSI driver untuk CephFS saja. Di manifest `operator.yaml` yang
-sudah diberikan, CSI driver RBD sudah dimatikan dengan mengubah ConfigMap rook-ceph-operator-config.
+hanya membutuhkan CSI driver untuk CephFS saja. Di _manifest_ `operator.yaml`
+yang sudah diberikan, CSI driver RBD sudah dimatikan dengan mengubah ConfigMap rook-ceph-operator-config.
 
 ```diff
  kind: ConfigMap
@@ -41,8 +41,8 @@ sudah diberikan, CSI driver RBD sudah dimatikan dengan mengubah ConfigMap rook-c
 +    ROOK_CSI_ENABLE_RBD: "false"
 ```
 
-Selanjutnya, untuk mendeploy Operator Rook beserta Klaster Ceph kita hanya perlu
-menerapkan berkas-berkas manifest berikut.
+Selanjutnya, untuk mendeploy Operator Rook beserta Klaster Ceph hanya perlu
+menerapkan berkas-berkas _manifest_ berikut.
 
 ```bash
 kubectl create -f common.yaml
@@ -87,7 +87,7 @@ kubectl create -f toolbox.yaml
 kubectl exec -it -n rook-ceph deploy/rook-ceph-tools -- ceph status
 ```
 
-Status klaster akan ditampilkan dengan
+Status klaster akan ditampilkan kurang lebih seperti berikut.
 
 ```
   cluster:
@@ -108,17 +108,41 @@ Status klaster akan ditampilkan dengan
 
 ### Membuat Filesystem
 
-> tidak ada perubahan
+Untuk membuat _filesystem_ di atas klaster Ceph yang sudah dibuat, cukup perlu
+mendefinisikan _resource_ CephFilesystem. CephFilesystem bisa mengatur mulai
+dari replikasi metadata, kompresi, sampai batas _resource_ yang akan digunakan
+oleh metadata server nanti. Kali ini, _manifest_ default yang diberikan sudah
+cukup untuk kebutuhan demo ini, jadi bisa langsung dibuat saja.
 
 ```bash
 kubectl create -f filesystem.yaml
 ```
 
-### Menyiapkan _Dynamic Provisioning_
+## Dynamic Provisioning
 
-> TODO: set as default storageclass
+Untuk menggunakan _dynamic provisioning_, masih ada pekerjaan rumah yang harus
+dikerjakan. Belum ada StorageClass yang bisa dipakai untuk memenuhi permintaan
+_storage_ yang dideskripsikan oleh PVC (PersistentVolumeClaim). StorageClass
+yang dibuat akan menggunakan CSI CephFS Provisioner yang telah disediakan oleh
+Operator Rook sebelumnya. Di balik layar, _provisioner_ tadi diimplementasikan
+sebagai _CSI Plugin_.
 
-Kita dapat menambahkan 2 baris kode sumber berikut:
+Buat StorageClass dengan menerapkan _manifest_ `csi-storageclass.yaml`.
+
+```bash
+kubectl create -f csi-storageclass.yaml
+```
+
+Agar lebih afdal, sebagai satu-satunya StorageClass yang tersedia di klaster
+bisa ditandai sebagai kelas _default_. StorageClass _default_ dapat menyediakan
+PV (PersistentVolume) kepada PVC yang tidak menspesifikasikan kolom
+`storageClassName`.
+
+```bash
+kubectl patch -n rook-ceph storageclass rook-cephfs -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"true"}}}'
+```
+
+Atau kita dapat menambahkan 2 baris kode sumber berikut:
 
 ```
 annotations:
@@ -127,7 +151,7 @@ annotations:
 
 pada berkas `csi-storageclass.yaml` pada bagian `metadata`.
 
-## Dynamic Provisioning
+## _Dynamic Provisioning in Action_
 
 > TODO
 
