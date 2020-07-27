@@ -118,9 +118,7 @@ cukup untuk kebutuhan demo ini, jadi bisa langsung dibuat saja.
 kubectl create -f filesystem.yaml
 ```
 
-### Menyiapkan _Dynamic Provisioning_
-
-> TODO: needs better wording/explanation
+## Dynamic Provisioning
 
 Untuk menggunakan _dynamic provisioning_, masih ada pekerjaan rumah yang harus
 dikerjakan. Belum ada StorageClass yang bisa dipakai untuk memenuhi permintaan
@@ -143,6 +141,15 @@ PV (PersistentVolume) kepada PVC yang tidak menspesifikasikan kolom
 ```bash
 kubectl patch -n rook-ceph storageclass rook-cephfs -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"true"}}}'
 ```
+
+Atau kita dapat menambahkan 2 baris kode sumber berikut:
+
+```
+annotations:
+    storageclass.kubernetes.io/is-default-class: true
+```
+
+pada berkas `csi-storageclass.yaml` pada bagian `metadata`.
 
 ## _Dynamic Provisioning in Action_
 
