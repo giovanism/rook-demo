@@ -3,6 +3,7 @@ kind: PersistentVolumeClaim
 metadata:
   name: test-pvc-daemonset
 spec:
+  storageClassName: rook-cephfs
   accessModes:
     - ReadWriteMany
   volumeMode: Filesystem

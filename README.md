@@ -16,23 +16,12 @@ dokumentasi resmi [Rook][rook-io] dan panduan _quickstart_
 Berikut bukan batas minimum yang mutlak untuk klaster Rook, tapi setup yang
 digunakan pada demo ini seperti berikut:
 
-- Kubernetes v1.18
+- GKE Rapid Channel
 - 3 _worker_ node
-- _Kernel module_ `rbd` dan paket `lvm2` di setiap node
-- Satu _block storage_ berukuran 8GB untuk setiap node (e.g. /dev/sda) yang
-  masih kosong tanpa tabel partisi atau _filesystem_.
+- Ubuntu Boot Disk
 
 Untuk konfigurasi lain, silahkan kunjungi
 [prasyarat][ceph-prerequisites] lengkap untuk klaster Ceph.
-
-> __Catatan__: Untuk membuat klaster Kubernetes bisa memakai alat seperti
-> [Kubespray][kubespray] atau [Kops][kops]. Kubespray mendukung pembuatan
-> klaster di VM secara lokal menggunakan vagrant.
-
-> __Catatan__: Untuk mencoba _dynamic provisioning_ tanpa Rook, pastikan bahwa
-> klaster memiliki StorageClass _default_, contohnya menggunakan Minikube dengan
-> _addon_ storage-provisioner yang sederhana.
-> _[Lewati Rook](#dynamic-provisioning-in-Action)_.
 
 ### Deploy Operator Rook dan Buat Klaster Ceph
 
@@ -58,7 +47,7 @@ menerapkan berkas-berkas _manifest_ berikut.
 ```bash
 kubectl create -f common.yaml
 kubectl create -f operator.yaml
-kubectl create -f cluster.yaml
+kubectl create -f cluster-on-pvc.yaml
 ```
 
 Klaster Ceph yang siap digunakan kurang lebih akan memiliki mon yang memenuhi
@@ -144,24 +133,6 @@ Buat StorageClass dengan menerapkan _manifest_ `csi-storageclass.yaml`.
 kubectl create -f csi-storageclass.yaml
 ```
 
-Agar lebih afdal, sebagai satu-satunya StorageClass yang tersedia di klaster
-bisa ditandai sebagai kelas _default_. StorageClass _default_ dapat menyediakan
-PV (PersistentVolume) kepada PVC yang tidak menspesifikasikan kolom
-`storageClassName`.
-
-```bash
-kubectl patch -n rook-ceph storageclass rook-cephfs -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"true"}}}'
-```
-
-Atau kita dapat menambahkan 2 baris kode sumber berikut:
-
-```
-annotations:
-    storageclass.kubernetes.io/is-default-class: true
-```
-
-pada berkas `csi-storageclass.yaml` pada bagian `metadata`.
-
 ## _Dynamic Provisioning in Action_
 
 Sekarang untuk menggunakan _storage_ yang sudah diatur menggunakan _dynamic
@@ -181,6 +152,7 @@ kind: PersistentVolumeClaim
 metadata:
   name: test-pvc-daemonset
 spec:
+  storageClassName: rook-cephfs
   accessModes:
     - ReadWriteMany
   volumeMode: Filesystem
