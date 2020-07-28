@@ -3,7 +3,7 @@
 Hai! Repository ini bertujuan untuk membantu menunjukkan pemakaian _storage
 orchestrator_ Rook di ekosistem Kubernetes. Selain itu ada juga contoh sederhana
 bagaimana mengonsumsi _storage_ yang dialokasikan menggunakan _dynamic
-provisoning_.
+provisioning_.
 
 ## Rook
 
@@ -13,22 +13,33 @@ dokumentasi resmi [Rook][rook-io] dan panduan _quickstart_
 
 ### _Setup_ Klaster
 
-Berikut bukan batas minimum yang mutlak, tapi setup yang saya gunakan untuk demo
-ini:
+Berikut bukan batas minimum yang mutlak untuk klaster Rook, tapi setup yang
+digunakan pada demo ini seperti berikut:
 
 - Kubernetes v1.18
 - 3 _worker_ node
-- satu block storage berukuran 8GB untuk setiap node (e.g. /dev/sda) yang masih
-  kosong tanpa tabel partisi atau _filesystem_.
+- _Kernel module_ `rbd` dan paket `lvm2` di setiap node
+- Satu _block storage_ berukuran 8GB untuk setiap node (e.g. /dev/sda) yang
+  masih kosong tanpa tabel partisi atau _filesystem_.
 
-Untuk konfigurasi yang lebih lanjut lagi, bisa merujuk ke
-[_Prerequisites_][ceph-prerequisites] lengkap untuk membuat klaster Ceph.
+Untuk konfigurasi lain, silahkan kunjungi
+[prasyarat][ceph-prerequisites] lengkap untuk klaster Ceph.
+
+> __Catatan__: Untuk membuat klaster Kubernetes bisa memakai alat seperti
+> [Kubespray][kubespray] atau [Kops][kops]. Kubespray mendukung pembuatan
+> klaster di VM secara lokal menggunakan vagrant.
+
+> __Catatan__: Untuk mencoba _dynamic provisioning_ tanpa Rook, pastikan bahwa
+> klaster memiliki StorageClass _default_, contohnya menggunakan Minikube dengan
+> _addon_ storage-provisioner yang sederhana.
+> _[Lewati Rook](#dynamic-provisioning-in-Action)_.
 
 ### Deploy Operator Rook dan Buat Klaster Ceph
 
 Contoh ini hanya akan mendemonstrasikan `volumeMode: Filesystem`, sehingga kita
 hanya membutuhkan CSI driver untuk CephFS saja. Di _manifest_ `operator.yaml`
-yang sudah diberikan, CSI driver RBD sudah dimatikan dengan mengubah ConfigMap rook-ceph-operator-config.
+yang sudah diberikan, CSI driver RBD sudah dimatikan dengan mengubah ConfigMap
+rook-ceph-operator-config.
 
 ```diff
  kind: ConfigMap
@@ -247,6 +258,8 @@ Meskipun contoh yang diberikan masih belum praktis, namun cukup menunjukkan
 kapabilitas solusi _storage_ yang dibangun menggunakan _resource_ Kubernetes
 seperti PVC, StorageClass dan CSI Plugin.
 
+[kubespray]: https://kubespray.io/
+[kops]: https://kops.sigs.k8s.io/
 [rook-io]: https://rook.io
 [quickstart-ceph]: https://rook.io/docs/rook/v1.3/ceph-quickstart.html
 [ceph-prerequisites]: https://rook.io/docs/rook/v1.3/ceph-prerequisites.html
