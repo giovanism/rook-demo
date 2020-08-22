@@ -5,6 +5,9 @@ orchestrator_ Rook di ekosistem Kubernetes. Selain itu ada juga contoh sederhana
 bagaimana mengonsumsi _storage_ yang dialokasikan menggunakan _dynamic
 provisioning_.
 
+- Video: https://youtu.be/dvmUGzTebsc
+- Video GKE version: https://youtu.be/QfeN_1KQJKQ
+
 ## Rook
 
 Kebanyakan langkah-langkah dan _manifest_ yang dipakai di sini diambil dari
